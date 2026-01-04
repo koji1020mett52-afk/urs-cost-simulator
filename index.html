@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUL軟性尿管鏡 コスト変動シミュレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            height: 60vh;
+            width: 100%;
+        }
+        /* For Chrome, Safari, and Opera */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        /* For Firefox */
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 p-4 sm:p-6 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">TUL軟性尿管鏡 コスト変動シミュレーター</h1>
+            <p class="mt-2 text-md text-gray-600">各種パラメータを調整してコストを比較</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 前提条件とスライダー -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                <h2 class="text-xl font-semibold mb-4 border-b pb-2">パラメータ設定</h2>
+                <div class="space-y-6 text-sm">
+                    <!-- 年間症例数 -->
+                    <div>
+                        <label for="case-slider" class="font-semibold text-gray-700">年間症例数: <span id="case-slider-value" class="font-bold text-indigo-600">143</span> 例</label>
+                        <input type="range" id="case-slider" min="0" max="1000" value="143" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+                    </div>
+                    
+                    <!-- Reusable -->
+                    <div class="space-y-3 pt-4 border-t">
+                        <h3 class="font-bold text-lg text-blue-600">Reusable</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="reusable-price-slider" class="font-semibold text-gray-700">本体価格: <span id="reusable-price-value" class="font-bold text-indigo-600">8,500,000</span> 円</label>
+                                <input type="range" id="reusable-price-slider" min="0" max="15000000" step="100000" value="8500000" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+                            </div>
+                            <div>
+                                <label for="reusable-lifespan-slider" class="font-semibold text-gray-700">耐用年数: <span id="reusable-lifespan-value" class="font-bold text-indigo-600">10</span> 年</label>
+                                <input type="range" id="reusable-lifespan-slider" min="1" max="20" step="1" value="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+                            </div>
+                            <div>
+                                <label for="reusable-maintenance-slider" class="font-semibold text-gray-700">保守費用/年: <span id="reusable-maintenance-value" class="font-bold text-indigo-600">57,000</span> 円</label>
+                                <input type="range" id="reusable-maintenance-slider" min="0" max="200000" step="1000" value="57000" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+                            </div>
+                            <div>
+                                <label for="initial-repair-cost-slider" class="font-semibold text-gray-700">当初修理費用/例: <span id="initial-repair-cost-value" class="font-bold text-indigo-600">9,129</span> 円</label>
+                                <input type="range" id="initial-repair-cost-slider" min="5000" max="50000" step="1" value="9129" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+                            </div>
+                             <div>
+                                <label for="repair-reduction-slider" class="font-semibold text-gray-700">修理費用削減率: <span id="repair-reduction-value" class="font-bold text-indigo-600">0</span> %</label>
+                                <input type="range" id="repair-reduction-slider" min="0" max="100" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+                            </div>
+                            <ul class="space-y-1 pl-2 text-xs">
+                                <li><strong>減価償却費/年:</strong> <span id="reusable-depreciation-value">850,000</span> 円</li>
+                                <li><strong>削減後修理費用/例:</strong> <span id="reduced-repair-cost-value" class="font-semibold">9,129</span> 円</li>
+                                <li><strong>滅菌費用/例:</strong> 13,000 円</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Single-use -->
+                     <div class="space-y-3 pt-4 border-t">
+                        <h3 class="font-bold text-lg text-green-600">Single-use</h3>
+                         <div>
+                            <label for="single-use-price-slider" class="font-semibold text-gray-700">本体価格/例: <span id="single-use-price-value" class="font-bold text-indigo-600">103,000</span> 円</label>
+                            <input type="range" id="single-use-price-slider" min="0" max="150000" step="1000" value="103000" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- グラフと結果 -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                <div class="mb-6">
+                    <label for="usage-slider" class="block mb-2 font-medium text-gray-700">Single-use 使用率: <span id="usage-slider-value" class="font-bold text-indigo-600">50%</span></label>
+                    <input type="range" id="usage-slider" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+                <div class="chart-container mb-6">
+                    <canvas id="costChart"></canvas>
+                </div>
+                <div id="result-details" class="mt-6 p-4 bg-gray-100 rounded-lg">
+                    <!-- 結果はここに動的に表示されます -->
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 bg-white p-6 rounded-xl shadow-md border border-gray-200">
+            <h2 class="text-xl font-semibold mb-4">コスト内訳データ</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 rounded-l-lg">Single-use 使用率</th>
+                            <th scope="col" class="px-6 py-3">Reusable コスト</th>
+                            <th scope="col" class="px-6 py-3">Single-use コスト</th>
+                            <th scope="col" class="px-6 py-3 rounded-r-lg">年間総コスト</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cost-table-body">
+                        <!-- データはここに動的に挿入されます -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Chart.jsのグローバル設定
+    Chart.defaults.font.family = "'Inter', 'Noto Sans JP', sans-serif";
+
+    // DOM要素の取得
+    const caseSlider = document.getElementById('case-slider');
+    const caseSliderValue = document.getElementById('case-slider-value');
+    const reusablePriceSlider = document.getElementById('reusable-price-slider');
+    const reusablePriceValue = document.getElementById('reusable-price-value');
+    const reusableLifespanSlider = document.getElementById('reusable-lifespan-slider');
+    const reusableLifespanValue = document.getElementById('reusable-lifespan-value');
+    const reusableMaintenanceSlider = document.getElementById('reusable-maintenance-slider');
+    const reusableMaintenanceValue = document.getElementById('reusable-maintenance-value');
+    const reusableDepreciationValue = document.getElementById('reusable-depreciation-value');
+    const initialRepairCostSlider = document.getElementById('initial-repair-cost-slider');
+    const initialRepairCostValue = document.getElementById('initial-repair-cost-value');
+    const repairReductionSlider = document.getElementById('repair-reduction-slider');
+    const repairReductionValue = document.getElementById('repair-reduction-value');
+    const reducedRepairCostValue = document.getElementById('reduced-repair-cost-value');
+    const singleUsePriceSlider = document.getElementById('single-use-price-slider');
+    const singleUsePriceValue = document.getElementById('single-use-price-value');
+    const usageSlider = document.getElementById('usage-slider');
+    const usageSliderValue = document.getElementById('usage-slider-value');
+    const resultDetails = document.getElementById('result-details');
+    const tableBody = document.getElementById('cost-table-body');
+    const ctx = document.getElementById('costChart').getContext('2d');
+
+    // 固定パラメータ
+    const fixedParams = {
+        reusableSterilizationPerCase: 13000,
+    };
+
+    // コスト計算関数
+    function calculateCosts(singleUsePercentage, annualCases, reusablePrice, repairReductionRate, singleUsePrice, reusableLifespan, initialRepairCost, reusableMaintenance) {
+        // Single-useが100%の場合、Reusableのコストは0とみなす
+        if (parseInt(singleUsePercentage, 10) === 100) {
+            const annualSingleUseCost = singleUsePrice * annualCases;
+            return {
+                total: annualSingleUseCost,
+                reusable: 0,
+                singleUse: annualSingleUseCost
+            };
+        }
+
+        // 修理費用を削減率に応じて計算
+        const reductionFactor = 1 - (repairReductionRate / 100);
+        const reducedRepairCost = initialRepairCost * reductionFactor;
+        const currentReusableVariableCostPerCase = reducedRepairCost + fixedParams.reusableSterilizationPerCase;
+
+        // Single-useが100%未満の場合の計算
+        const reusableDepreciation = reusableLifespan > 0 ? reusablePrice / reusableLifespan : 0;
+        const reusableFixedCost = reusableDepreciation + reusableMaintenance;
+
+        const singleUseRatio = singleUsePercentage / 100;
+        const reusableRatio = 1 - singleUseRatio;
+
+        const singleUseCases = annualCases * singleUseRatio;
+        const reusableCases = annualCases * reusableRatio;
+
+        const annualSingleUseCost = singleUsePrice * singleUseCases;
+        const annualReusableCost = reusableFixedCost + (currentReusableVariableCostPerCase * reusableCases);
+        const totalAnnualCost = annualSingleUseCost + annualReusableCost;
+
+        return {
+            total: totalAnnualCost,
+            reusable: annualReusableCost,
+            singleUse: annualSingleUseCost
+        };
+    }
+
+    // Chart.jsインスタンスの初期化
+    const costChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array.from({ length: 11 }, (_, i) => `${i * 10}%`),
+            datasets: [
+                {
+                    label: '年間総コスト',
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.1,
+                    yAxisID: 'y',
+                    pointBackgroundColor: '#4f46e5',
+                    pointRadius: 4,
+                },
+                {
+                    label: 'Reusable コスト',
+                    backgroundColor: 'rgba(37, 99, 235, 0.5)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    type: 'bar',
+                    yAxisID: 'y',
+                },
+                {
+                    label: 'Single-use コスト',
+                    backgroundColor: 'rgba(22, 163, 74, 0.5)',
+                    borderColor: 'rgba(22, 163, 74, 1)',
+                    type: 'bar',
+                    yAxisID: 'y',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            stacked: true,
+            plugins: {
+                title: { display: true, text: 'Single-use 使用率と年間コストの関係', font: { size: 16 } },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label || ''}: ${new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(context.parsed.y)}`
+                    }
+                }
+            },
+            scales: {
+                x: { display: true, title: { display: true, text: 'Single-use 使用率 (%)' }, stacked: true },
+                y: {
+                    display: true,
+                    title: { display: true, text: '年間コスト (円)' },
+                    ticks: { callback: (value) => new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 0 }).format(value) },
+                    stacked: true
+                }
+            }
+        }
+    });
+
+    // 全ての更新を行うメイン関数
+    function updateAll() {
+        const currentCases = parseInt(caseSlider.value);
+        const currentReusablePrice = parseInt(reusablePriceSlider.value);
+        const currentReusableLifespan = parseInt(reusableLifespanSlider.value);
+        const currentReusableMaintenance = parseInt(reusableMaintenanceSlider.value);
+        const currentInitialRepairCost = parseInt(initialRepairCostSlider.value);
+        const currentRepairReduction = parseInt(repairReductionSlider.value);
+        const currentSingleUsePrice = parseInt(singleUsePriceSlider.value);
+        const currentUsage = parseInt(usageSlider.value);
+
+        // スライダー値表示の更新
+        caseSliderValue.textContent = currentCases.toLocaleString('ja-JP');
+        reusablePriceValue.textContent = currentReusablePrice.toLocaleString('ja-JP');
+        reusableLifespanValue.textContent = currentReusableLifespan;
+        reusableMaintenanceValue.textContent = currentReusableMaintenance.toLocaleString('ja-JP');
+        initialRepairCostValue.textContent = currentInitialRepairCost.toLocaleString('ja-JP');
+        singleUsePriceValue.textContent = currentSingleUsePrice.toLocaleString('ja-JP');
+        usageSliderValue.textContent = `${currentUsage}%`;
+        repairReductionValue.textContent = currentRepairReduction;
+        const depreciation = currentReusableLifespan > 0 ? currentReusablePrice / currentReusableLifespan : 0;
+        reusableDepreciationValue.textContent = Math.round(depreciation).toLocaleString('ja-JP');
+        const reducedCost = currentInitialRepairCost * (1 - (currentRepairReduction / 100));
+        reducedRepairCostValue.textContent = Math.round(reducedCost).toLocaleString('ja-JP');
+
+        // グラフデータ更新
+        const totalCostData = [];
+        const reusableCostData = [];
+        const singleUseCostData = [];
+        for (let i = 0; i <= 100; i += 10) {
+            const costs = calculateCosts(i, currentCases, currentReusablePrice, currentRepairReduction, currentSingleUsePrice, currentReusableLifespan, currentInitialRepairCost, currentReusableMaintenance);
+            totalCostData.push(costs.total);
+            reusableCostData.push(costs.reusable);
+            singleUseCostData.push(costs.singleUse);
+        }
+        costChart.data.datasets[0].data = totalCostData;
+        costChart.data.datasets[1].data = reusableCostData;
+        costChart.data.datasets[2].data = singleUseCostData;
+        costChart.update();
+
+        // 詳細表示の更新
+        updateDetails(currentUsage, currentCases, currentReusablePrice, currentRepairReduction, currentSingleUsePrice, currentReusableLifespan, currentInitialRepairCost, currentReusableMaintenance);
+        
+        // テーブルの更新
+        updateTable(currentCases, currentReusablePrice, currentRepairReduction, currentSingleUsePrice, currentReusableLifespan, currentInitialRepairCost, currentReusableMaintenance);
+    }
+    
+    // 詳細表示の更新
+    function updateDetails(percentage, annualCases, reusablePrice, repairReductionRate, singleUsePrice, reusableLifespan, initialRepairCost, reusableMaintenance) {
+        const costs = calculateCosts(percentage, annualCases, reusablePrice, repairReductionRate, singleUsePrice, reusableLifespan, initialRepairCost, reusableMaintenance);
+        const reusableRatio = 100 - percentage;
+        
+        resultDetails.innerHTML = `
+            <h3 class="text-lg font-semibold mb-2">使用率 ${percentage}% の場合の内訳</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <p><strong>Reusable 使用率:</strong> ${reusableRatio.toFixed(0)}%</p>
+                <p><strong>Single-use 使用率:</strong> ${percentage}%</p>
+            </div>
+            <div class="mt-3 space-y-1">
+                <p class="flex justify-between"><span>Reusable コスト:</span> <span class="font-semibold text-blue-700">${costs.reusable.toLocaleString('ja-JP', { style: 'currency', currency: 'JPY' })}</span></p>
+                <p class="flex justify-between"><span>Single-use コスト:</span> <span class="font-semibold text-green-700">${costs.singleUse.toLocaleString('ja-JP', { style: 'currency', currency: 'JPY' })}</span></p>
+                <hr class="my-2">
+                <p class="flex justify-between text-base"><strong>年間総コスト:</strong> <strong class="text-indigo-700">${costs.total.toLocaleString('ja-JP', { style: 'currency', currency: 'JPY' })}</strong></p>
+            </div>
+        `;
+    }
+
+    // テーブルの更新
+    function updateTable(annualCases, reusablePrice, repairReductionRate, singleUsePrice, reusableLifespan, initialRepairCost, reusableMaintenance) {
+        tableBody.innerHTML = ''; // テーブルをクリア
+        for (let i = 0; i <= 100; i += 10) {
+            const costs = calculateCosts(i, annualCases, reusablePrice, repairReductionRate, singleUsePrice, reusableLifespan, initialRepairCost, reusableMaintenance);
+            const row = document.createElement('tr');
+            row.className = 'bg-white border-b hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${i}%</td>
+                <td class="px-6 py-4">${costs.reusable.toLocaleString('ja-JP')} 円</td>
+                <td class="px-6 py-4">${costs.singleUse.toLocaleString('ja-JP')} 円</td>
+                <td class="px-6 py-4 font-bold">${costs.total.toLocaleString('ja-JP')} 円</td>
+            `;
+            tableBody.appendChild(row);
+        }
+    }
+
+    // イベントリスナーの設定
+    [
+        caseSlider, 
+        reusablePriceSlider, 
+        usageSlider, 
+        repairReductionSlider, 
+        singleUsePriceSlider, 
+        reusableLifespanSlider,
+        initialRepairCostSlider,
+        reusableMaintenanceSlider
+    ].forEach(slider => {
+        slider.addEventListener('input', updateAll);
+    });
+
+    // 初期表示
+    window.onload = updateAll;
+
+</script>
+</body>
+</html>
